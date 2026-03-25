@@ -30,7 +30,7 @@ Multi-platform topic intelligence API for AI agents. Install a Skill guide, auto
 | Platform | Method | Status |
 |----------|--------|--------|
 | Xiaohongshu | mcporter + Cookie | Planned |
-| GitHub | gh CLI | Planned |
+| GitHub | REST API (HTTP) | Planned |
 | Twitter/X | bird + Cookie | Planned |
 | More (HN, Reddit, ...) | TBD | Future |
 

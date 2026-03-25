@@ -32,7 +32,7 @@ graph TB
 
         subgraph reach["Agent-Reach (channel 层)"]
             xhs["小红书<br/>mcporter + Cookie"]
-            gh["GitHub<br/>gh CLI"]
+            gh["GitHub<br/>REST API (HTTP)"]
             tw["Twitter<br/>bird + Cookie"]
             more["...<br/>后续扩展"]
         end
@@ -315,7 +315,7 @@ Headers: X-Agent-Id: ag_xxxx
 |---|--------|------|--------|------|
 | M1 | **数据库 & 基础框架** | Django 项目脚手架、SQLite models、DRF 配置、Agent-Reach 集成 | 可运行的空服务 + migration | 无 |
 | M2 | **Auth 模块** | AI 注册（密钥交换）、签名验证中间件、IP 限频 (3/IP) | 注册 endpoint + auth middleware | M1 |
-| M3 | **GitHub 采集器** | 调 Agent-Reach GitHub channel，输出标准 JSONL | `/api/v1/collect/github` | M1 |
+| M3 | **GitHub 采集器** | 直接调 GitHub REST API (HTTP)，输出标准 JSONL | `/api/v1/collect/github` | M1 |
 | M4 | **小红书采集器** | 调 Agent-Reach 小红书 channel + Cookie 托管 | `/api/v1/collect/xiaohongshu` | M1, M6 |
 | M5 | **Twitter 采集器** | 调 Agent-Reach Twitter channel + Cookie 托管 | `/api/v1/collect/twitter` | M1, M6 |
 | M6 | **凭证托管** | 平台 Cookie/Token 的加密存储、读取、刷新 | credential CRUD API + 刷新定时任务 | M1 |
