@@ -115,20 +115,21 @@ graph TB
 
 | 项目 | 选择 | 说明 |
 |------|------|------|
-| **运行时** | Python + Django | 全栈框架，内置 ORM / Auth / Admin / 模板引擎 |
-| **数据库** | SQLite | 轻量，零运维，Django 默认支持 |
-| **API 层** | Django REST Framework | API route + 序列化 + 权限控制 |
+| **运行时** | Python + FastAPI | 轻量异步框架，自带 Swagger API 文档 |
+| **数据库** | SQLite | 轻量，零运维，单文件 |
+| **数据校验** | Pydantic | FastAPI 内置，直接对应 JSONL Schema |
+| **页面模板** | Jinja2 | 官网静态页面渲染 |
 | **数据采集** | Agent-Reach | Python 原生集成，直接 import |
 
 ### 3.2 云端后台
 
 | 模块 | 职责 | 关键技术 |
 |------|------|---------|
-| **Auth 服务** | AI 注册（密钥交换）、签名验证中间件、IP 限频 | Django Auth + DRF |
-| **Data API** | 接收采集请求，调度 Agent-Reach channels | Agent-Reach 直接 import |
-| **Sync API** | 接收本地报告，存储到云端 | Django ORM + SQLite |
+| **Auth 服务** | AI 注册（密钥交换）、签名验证中间件、IP 限频 | FastAPI Depends + Pydantic |
+| **Data API** | 接收采集请求，调度 Agent-Reach channels | Agent-Reach + asyncio 并发 |
+| **Sync API** | 接收本地报告，存储到云端 | SQLite + aiosqlite |
 | **凭证托管** | 管理各平台预配置 Cookie/Token | 加密存储, 定期刷新 |
-| **产品官网** | 产品介绍、安装引导、报告查看 | 静态页面 + API 对接 |
+| **产品官网** | 产品介绍、安装引导、报告查看 | Jinja2 模板 |
 
 ### 3.3 Skill 文件（本地 API 指南）
 
@@ -313,7 +314,7 @@ Headers: X-Agent-Id: ag_xxxx
 
 | # | 模块名 | 范围 | 交付物 | 依赖 |
 |---|--------|------|--------|------|
-| M1 | **数据库 & 基础框架** | Django 项目脚手架、SQLite models、DRF 配置、Agent-Reach 集成 | 可运行的空服务 + migration | 无 |
+| M1 | **数据库 & 基础框架** | FastAPI 项目脚手架、SQLite schema、Pydantic models、配置管理 | 可运行的空服务 + DB 初始化 | 无 |
 | M2 | **Auth 模块** | AI 注册（密钥交换）、签名验证中间件、IP 限频 (3/IP) | 注册 endpoint + auth middleware | M1 |
 | M3 | **GitHub 采集器** | 直接调 GitHub REST API (HTTP)，输出标准 JSONL | `/api/v1/collect/github` | M1 |
 | M4 | **小红书采集器** | 调 Agent-Reach 小红书 channel + Cookie 托管 | `/api/v1/collect/xiaohongshu` | M1, M6 |
@@ -331,7 +332,7 @@ Headers: X-Agent-Id: ag_xxxx
 
 ```mermaid
 graph LR
-    M1["M1 基础框架<br/>Django + SQLite"] --> M2["M2 Auth<br/>密钥交换 + IP限频"]
+    M1["M1 基础框架<br/>FastAPI + SQLite"] --> M2["M2 Auth<br/>密钥交换 + IP限频"]
     M1 --> M6["M6 凭证托管"]
     M9["M9 JSONL Schema"] --> M3["M3 GitHub 采集器"]
     M9 --> M4["M4 小红书采集器"]
@@ -392,7 +393,7 @@ graph LR
 
 ## 6. 待定事项
 
-- [x] 技术栈：Python + Django + DRF + SQLite
+- [x] 技术栈：Python + FastAPI + Pydantic + SQLite
 - [x] 认证方案：AI 本地生成密钥，密钥交换注册，IP 限 3 个
 - [x] 密钥持久化：写入 Skill 安装目录
 - [ ] 部署方案（服务器 / 云服务）

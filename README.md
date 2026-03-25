@@ -36,8 +36,9 @@ Multi-platform topic intelligence API for AI agents. Install a Skill guide, auto
 
 ## Tech Stack
 
-- **Python + Django + DRF** — full-stack, one project
+- **Python + FastAPI + Pydantic** — lightweight async API, auto-generated Swagger docs
 - **SQLite** — lightweight, zero-ops
+- **Jinja2** — server-side page rendering
 - **Agent-Reach** — native Python integration for multi-platform data fetching
 
 ## Auth
