@@ -1,5 +1,11 @@
+import importlib.util
+import os
+import shutil
+from pathlib import Path
+
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from omni_collect.main import app
 
@@ -11,24 +17,8 @@ def anyio_backend():
 
 @pytest.fixture
 async def client():
-    """Client that triggers the full lifespan (including init_db)."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
-        # Send a request through the app's lifespan context
-        # by entering the app as an ASGI app with lifespan support
-        yield c
-
-
-@pytest.fixture
-async def lifespan_client():
-    """Client that explicitly runs the ASGI lifespan, covering DB init."""
-    from contextlib import asynccontextmanager
-
-    transport = ASGITransport(app=app, raise_app_exceptions=False)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
-        # Manually trigger lifespan startup
-        from omni_collect.database import init_db
-        await init_db()
         yield c
 
 
@@ -51,27 +41,30 @@ async def test_root(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_init_db_creates_tables(tmp_path):
-    """Verify init_db works from a clean state (no pre-existing data/ dir)."""
+async def test_init_db_creates_data_dir_and_tables(tmp_path, monkeypatch):
     import sqlalchemy
-    from sqlalchemy.ext.asyncio import create_async_engine
 
-    db_path = tmp_path / "test.db"
+    from omni_collect import database as db_module
+
+    data_dir = tmp_path / "data"
+    db_path = data_dir / "test.db"
     engine = create_async_engine(f"sqlite+aiosqlite:///{db_path}")
 
-    from omni_collect.models.db import Base
+    monkeypatch.setattr(db_module, "DATA_DIR", data_dir)
+    monkeypatch.setattr(db_module, "engine", engine)
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        await db_module.init_db()
 
-    # Verify tables exist
-    async with engine.connect() as conn:
-        result = await conn.execute(
-            sqlalchemy.text("SELECT name FROM sqlite_master WHERE type='table'")
-        )
-        tables = {row[0] for row in result}
+        assert data_dir.is_dir()
 
-    await engine.dispose()
+        async with engine.connect() as conn:
+            result = await conn.execute(
+                sqlalchemy.text("SELECT name FROM sqlite_master WHERE type='table'")
+            )
+            tables = {row[0] for row in result}
+    finally:
+        await engine.dispose()
 
     assert "agents" in tables
     assert "credentials" in tables
@@ -79,13 +72,45 @@ async def test_init_db_creates_tables(tmp_path):
     assert "reports" in tables
 
 
-@pytest.mark.anyio
-async def test_init_db_creates_data_dir():
-    """Verify that init_db() creates the data/ directory if missing."""
-    from pathlib import Path
+def test_settings_load_repo_env_from_any_cwd(tmp_path):
+    repo_root = tmp_path / "repo"
+    package_dir = repo_root / "src" / "omni_collect"
+    package_dir.mkdir(parents=True)
 
-    from omni_collect.config import DATA_DIR
-    from omni_collect.database import init_db
+    source_config = Path(__file__).resolve().parents[1] / "src" / "omni_collect" / "config.py"
+    shutil.copy(source_config, package_dir / "config.py")
 
-    await init_db()
-    assert DATA_DIR.is_dir()
+    (repo_root / ".env").write_text(
+        "\n".join(
+            [
+                "APP_NAME=FromEnv",
+                "PORT=9999",
+                "DATABASE_URL=sqlite+aiosqlite:///./data/test.db",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+
+    spec = importlib.util.spec_from_file_location(
+        "temp_omni_collect_config", package_dir / "config.py"
+    )
+    assert spec is not None and spec.loader is not None
+
+    module = importlib.util.module_from_spec(spec)
+    previous_cwd = Path.cwd()
+
+    try:
+        os.chdir(elsewhere)
+        spec.loader.exec_module(module)
+    finally:
+        os.chdir(previous_cwd)
+
+    assert module.settings.APP_NAME == "FromEnv"
+    assert module.settings.PORT == 9999
+    assert module.make_url(module.settings.DATABASE_URL).database == str(
+        repo_root / "data" / "test.db"
+    )
