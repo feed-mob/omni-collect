@@ -10,7 +10,7 @@ Multi-platform topic intelligence API for AI agents. Install a Skill guide, auto
 │  Claude Code │                        └──────────────────┘
 │  Codex       │── HTTP + secret key ──►┌──────────────────┐
 │  Continue    │◄── structured JSONL ───│  OmniCollect API │
-│  OpenClaw    │                        │  (Django + DRF)  │
+│  OpenClaw    │                        │  (FastAPI+SQLite) │
 │  ...         │                        └───────┬──────────┘
 └──────┬───────┘                                │
        │ local AI analysis                      │ Agent-Reach
@@ -37,8 +37,9 @@ Multi-platform topic intelligence API for AI agents. Install a Skill guide, auto
 ## Tech Stack
 
 - **Python + FastAPI + Pydantic** — lightweight async API, auto-generated Swagger docs
-- **SQLite** — lightweight, zero-ops
-- **Jinja2** — server-side page rendering
+- **SQLite + aiosqlite** — lightweight, zero-ops, async
+- **SQLAlchemy 2.0** — async ORM with declarative models
+- **Jinja2** — server-side page rendering (planned)
 - **Agent-Reach** — native Python integration for multi-platform data fetching
 
 ## Auth
@@ -49,6 +50,20 @@ No human registration needed. The AI agent handles everything:
 2. AI calls `POST /api/v1/auth/register` with the public key
 3. Server stores the key (max 3 registrations per IP)
 4. Key is persisted in the skill directory — done
+
+## Quick Start
+
+```bash
+# Install
+pip install -e ".[dev]"
+
+# Run
+python -m omni_collect.main
+
+# Visit
+# http://localhost:8000/docs  — Swagger UI
+# http://localhost:8000/health — Health check
+```
 
 ## Project Structure
 
