@@ -42,7 +42,7 @@ Multi-platform topic intelligence API for AI agents. Install a Skill guide, auto
 - **Jinja2** — server-side page rendering (planned)
 - **Agent-Reach** — native Python integration for multi-platform data fetching
 
-## Auth
+## Auth (Planned — M2)
 
 No human registration needed. The AI agent handles everything:
 
@@ -50,6 +50,8 @@ No human registration needed. The AI agent handles everything:
 2. AI calls `POST /api/v1/auth/register` with the public key
 3. Server stores the key (max 3 registrations per IP)
 4. Key is persisted in the skill directory — done
+
+> **Note**: Auth endpoints are not yet implemented. Currently only `GET /health` and `GET /` are available. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full API roadmap.
 
 ## Quick Start
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
@@ -45,7 +45,13 @@ class CollectRequest(BaseModel):
 
 
 class CollectItem(BaseModel):
-    """Standard JSONL item from any platform."""
+    """Standard JSONL item from any platform.
+
+    Common fields are typed explicitly. Platform-specific fields
+    (e.g. stars, forks, retweets) are preserved via extra="allow".
+    """
+
+    model_config = ConfigDict(extra="allow")
 
     platform: str
     type: str  # post, repo, tweet, ...
